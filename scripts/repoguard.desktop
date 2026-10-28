@@ -1,0 +1,21 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=RepoGuard
+GenericName=AI Code Reviewer
+Comment=Local-first AI code review assistant powered by Ollama
+Exec=/home/vector/Desktop/RepoGuard/scripts/launch.sh
+Icon=repoguard
+Terminal=false
+Categories=Development;Utility;
+StartupWMClass=repoguard
+Keywords=code;review;git;diff;ai;ollama;
+Actions=Stop;Status;
+
+[Desktop Action Stop]
+Name=Stop RepoGuard Service
+Exec=/home/vector/Desktop/RepoGuard/scripts/stop.sh
+
+[Desktop Action Status]
+Name=Check RepoGuard Status
+Exec=/home/vector/Desktop/RepoGuard/scripts/status.sh

@@ -1,6 +1,9 @@
 import logging
+import os
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from .config import settings, is_local_endpoint
 from .schemas import (
     DiffParseRequest,
@@ -170,3 +173,48 @@ async def export_review_endpoint(req: ExportRequest):
         markdown_content=md_content,
         filename=filename,
     )
+
+
+# ---------------------------------------------------------------------
+# Production Frontend SPA & PWA Serving
+# ---------------------------------------------------------------------
+DIST_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
+)
+
+if os.path.isdir(DIST_DIR):
+    assets_dir = os.path.join(DIST_DIR, "assets")
+    if os.path.isdir(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    icons_dir = os.path.join(DIST_DIR, "icons")
+    if os.path.isdir(icons_dir):
+        app.mount("/icons", StaticFiles(directory=icons_dir), name="icons")
+
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
+    async def serve_spa(full_path: str):
+        # Do not intercept undefined API routes - let them return 404 cleanly
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"API endpoint not found: /{full_path}",
+            )
+
+        # Check for direct static files in DIST_DIR (e.g. sw.js, manifest.webmanifest, favicon.svg)
+        exact_file = os.path.join(DIST_DIR, full_path)
+        if full_path and os.path.isfile(exact_file):
+            headers = {}
+            if full_path in ("sw.js", "manifest.webmanifest"):
+                headers["Cache-Control"] = "no-cache"
+            return FileResponse(exact_file, headers=headers)
+
+        # Fallback to index.html for SPA client-side routing
+        index_file = os.path.join(DIST_DIR, "index.html")
+        if os.path.isfile(index_file):
+            return FileResponse(index_file, headers={"Cache-Control": "no-cache"})
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Frontend build not found.",
+        )
+

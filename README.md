@@ -121,6 +121,42 @@ Open `http://127.0.0.1:5173` in your browser.
 
 ---
 
+## 🖥️ Linux / Pop!_OS Desktop Application (PWA)
+
+RepoGuard can run as an installable desktop-style application on Pop!_OS and Linux without Electron or third-party cloud dependencies:
+
+### 1. Install Desktop Launcher
+Run the zero-sudo installer script from the project root:
+```bash
+./scripts/install-desktop.sh
+```
+This automatically compiles the production assets, installs high-resolution icons into `~/.local/share/icons/hicolor/`, and generates `~/.local/share/applications/repoguard.desktop`.
+
+### 2. Launching RepoGuard
+- **From Application Menu**: Open the Pop!_OS Applications menu, search **RepoGuard**, and launch it directly.
+- **From Terminal**:
+  ```bash
+  ./scripts/launch.sh
+  ```
+The launcher will start the production backend service on `127.0.0.1:8000` (if not already running) and open RepoGuard in a dedicated, standalone app window (via Google Chrome `--app` mode, Chromium, or system browser).
+
+### 3. Check Status or Stop Service
+```bash
+# Check service PID, port health, and Ollama status
+./scripts/status.sh
+
+# Stop the backend service cleanly
+./scripts/stop.sh
+```
+
+### 4. Uninstall Desktop Launcher
+To remove the application menu entry and icons without affecting your project files:
+```bash
+./scripts/uninstall-desktop.sh
+```
+
+---
+
 ## 🤖 Ollama Model Setup (For Live AI Reviews)
 
 To run reviews using local AI inference:

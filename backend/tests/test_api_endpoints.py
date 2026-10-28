@@ -103,3 +103,33 @@ async def test_export_endpoint():
     export_data = export_res.json()
     assert "# 🛡️ RepoGuard Code Review Report" in export_data["markdown_content"]
     assert "Executive Summary" in export_data["markdown_content"]
+
+
+@pytest.mark.asyncio
+async def test_spa_static_serving():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        # Root index.html
+        res_root = await ac.get("/")
+        assert res_root.status_code == 200
+        assert "RepoGuard" in res_root.text
+
+        # Manifest
+        res_manifest = await ac.get("/manifest.webmanifest")
+        assert res_manifest.status_code == 200
+        assert "RepoGuard" in res_manifest.text
+
+        # Service Worker
+        res_sw = await ac.get("/sw.js")
+        assert res_sw.status_code == 200
+        assert "repoguard-static-v1" in res_sw.text
+
+        # SPA client-side route fallback
+        res_spa = await ac.get("/some-subroute")
+        assert res_spa.status_code == 200
+        assert "RepoGuard" in res_spa.text
+
+        # Undefined API route returns 404 cleanly
+        res_api_404 = await ac.get("/api/nonexistent")
+        assert res_api_404.status_code == 404
+
