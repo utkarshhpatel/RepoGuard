@@ -197,7 +197,7 @@ class OllamaClient:
             "format": "json",
             "options": {
                 "temperature": 0.2,
-                "num_predict": 1024,
+                "num_predict": 500,
             },
         }
 
