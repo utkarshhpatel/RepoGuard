@@ -76,6 +76,7 @@ export interface DiffParseResult {
 export interface ConnectionTestResponse {
   reachable: boolean;
   model_available: boolean;
+  configured_model?: string;
   installed_models: string[];
   message: string;
   is_local: boolean;

@@ -29,7 +29,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   historyCount,
 }) => {
   const [baseUrl, setBaseUrl] = useState('http://127.0.0.1:11434');
-  const [model, setModel] = useState('qwen3.5:4b');
+  const [model, setModel] = useState('qwen2.5-coder:1.5b');
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<ConnectionTestResponse | null>(null);
   const [clearedNotice, setClearedNotice] = useState(false);
@@ -131,11 +131,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               type="text"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              placeholder="qwen3.5:4b"
+              placeholder="qwen2.5-coder:1.5b"
               className="w-full bg-rg-bg border border-rg-border rounded-lg px-3 py-2 text-xs font-mono text-rg-text focus:outline-none focus:border-rg-accent"
             />
             <p className="text-[11px] text-rg-muted mt-1">
-              Default is <strong>qwen3.5:4b</strong>. Run <code>ollama pull qwen3.5:4b</code> if not installed.
+              Default is <strong>qwen2.5-coder:1.5b</strong> (fast, 8GB RAM & CPU-friendly). Run <code>ollama pull qwen2.5-coder:1.5b</code> if not installed.
             </p>
           </div>
 

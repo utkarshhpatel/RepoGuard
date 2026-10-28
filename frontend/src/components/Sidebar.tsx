@@ -162,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <>
                   <span className="w-2 h-2 rounded-full bg-rg-accent animate-pulse" />
                   <span className="text-rg-text font-mono truncate" title={modelStatus.message}>
-                    qwen3.5:4b (Ready)
+                    {modelStatus.configured_model || 'qwen2.5-coder:1.5b'} (Ready)
                   </span>
                 </>
               ) : (

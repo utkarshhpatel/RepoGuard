@@ -85,14 +85,15 @@ describe('RepoGuard Full App Integration', () => {
     vi.spyOn(settingsApi, 'getModelStatus').mockResolvedValue({
       reachable: true,
       model_available: true,
-      installed_models: ['qwen3.5:4b'],
+      configured_model: 'qwen2.5-coder:1.5b',
+      installed_models: ['qwen2.5-coder:1.5b'],
       message: 'Ollama is online',
       is_local: true,
     });
     vi.spyOn(settingsApi, 'getSettings').mockResolvedValue({
       ollama_base_url: 'http://127.0.0.1:11434',
-      ollama_model: 'qwen3.5:4b',
-      request_timeout_seconds: 90,
+      ollama_model: 'qwen2.5-coder:1.5b',
+      request_timeout_seconds: 120,
       max_diff_size_bytes: 1048576,
       is_local: true,
     });

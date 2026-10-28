@@ -143,7 +143,14 @@ async def run_review(
             description = str(item.get("description") or "No description provided.")[:4000]
             evidence = str(item.get("evidence") or "")[:2000]
             impact = str(item.get("impact") or "")[:2000]
-            conditions = str(item.get("conditions") or "")[:2000]
+            raw_cond = item.get("conditions")
+            if isinstance(raw_cond, list):
+                conditions = "; ".join(
+                    str(c.get("description") or c.get("title") or c) if isinstance(c, dict) else str(c)
+                    for c in raw_cond
+                )[:2000]
+            else:
+                conditions = str(raw_cond or "")[:2000]
             suggested_fix = str(item.get("suggested_fix") or "")[:4000]
             suggested_test = str(item.get("suggested_test") or "")[:4000]
             confidence = normalize_confidence(str(item.get("confidence_label", "medium")))

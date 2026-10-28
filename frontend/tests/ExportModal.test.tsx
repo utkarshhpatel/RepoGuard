@@ -76,7 +76,7 @@ describe('ExportModal Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Copy Markdown')).toBeInTheDocument();
+      expect(screen.getByText('Copy Markdown')).not.toBeDisabled();
     });
 
     fireEvent.click(screen.getByText('Copy Markdown'));

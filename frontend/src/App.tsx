@@ -60,12 +60,27 @@ export const AppContent: React.FC = () => {
     refreshStatus: refreshModelStatus,
   } = useModelStatus();
 
+  const activeModelName = modelStatus?.configured_model || 'qwen2.5-coder:1.5b';
+
   // Modals & Panels state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [leftTab, setLeftTab] = useState<'editor' | 'viewer'>('editor');
+  const [elapsedSec, setElapsedSec] = useState(0);
+
+  React.useEffect(() => {
+    if (status === 'reviewing') {
+      setElapsedSec(0);
+      const interval = setInterval(() => {
+        setElapsedSec((prev) => prev + 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setElapsedSec(0);
+    }
+  }, [status]);
 
   const selectedFile =
     parsedDiff && parsedDiff.files[selectedFileIndex]
@@ -144,7 +159,7 @@ export const AppContent: React.FC = () => {
               }}
               status={status}
               modelReachable={Boolean(modelStatus?.reachable && modelStatus?.model_available)}
-              modelName={modelStatus?.installed_models[0] || 'qwen3.5:4b'}
+              modelName={activeModelName}
               error={error}
             />
           ) : (
@@ -179,10 +194,13 @@ export const AppContent: React.FC = () => {
           <h3 className="text-base font-bold text-rg-text mb-1">
             Running Local Code Review
           </h3>
-          <p className="text-xs max-w-sm mb-4 leading-relaxed">
+          <p className="text-xs max-w-sm mb-2 leading-relaxed">
             Executing deterministic static rules and analyzing unified diff with{' '}
-            <code className="text-rg-accent font-mono">qwen3.5:4b</code> on your machine.
+            <code className="text-rg-accent font-mono">{activeModelName}</code> on CPU ({elapsedSec}s elapsed).
           </p>
+          <div className="text-[11px] text-rg-muted mb-4">
+            Optimized for 8 GB RAM • Inference running single-threaded
+          </div>
           <div className="flex items-center gap-2 text-[11px] font-mono text-rg-muted bg-rg-surface px-3 py-1.5 rounded-full border border-rg-border">
             <span className="w-2 h-2 rounded-full bg-rg-accent animate-ping" />
             <span>Localhost only • Zero data transmitted to cloud</span>
@@ -245,7 +263,7 @@ export const AppContent: React.FC = () => {
                 🔒 100% On-Device
               </span>
               <span className="text-[11px] text-rg-muted">
-                Powered by Ollama (qwen3.5:4b). No cloud API leakage.
+                Powered by Ollama ({activeModelName}). No cloud API leakage.
               </span>
             </div>
           </div>
@@ -301,6 +319,7 @@ export const AppContent: React.FC = () => {
             status={status}
             onNewReview={reset}
             onOpenExport={() => setIsExportOpen(true)}
+            modelName={activeModelName}
           />
         }
         banner={

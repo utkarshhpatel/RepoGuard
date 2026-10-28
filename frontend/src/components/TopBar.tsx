@@ -19,6 +19,7 @@ interface TopBarProps {
   status: ReviewStatus;
   onNewReview: () => void;
   onOpenExport: () => void;
+  modelName?: string;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -28,6 +29,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   status,
   onNewReview,
   onOpenExport,
+  modelName,
 }) => {
   const isDemo = reviewResult?.mode === 'demo';
 
@@ -94,7 +96,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               ) : (
                 <>
                   <Bot className="w-3.5 h-3.5" />
-                  Local AI Review (qwen3.5:4b)
+                  Local AI Review ({modelName || 'qwen2.5-coder:1.5b'})
                 </>
               )}
             </span>

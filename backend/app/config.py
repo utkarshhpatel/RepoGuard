@@ -13,12 +13,17 @@ def is_local_endpoint(url: str) -> bool:
         return False
 
 
+DEFAULT_OLLAMA_MODEL = "qwen2.5-coder:1.5b"
+DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
+DEFAULT_REQUEST_TIMEOUT = 120.0
+
+
 class Settings(BaseModel):
     ollama_base_url: str = Field(
-        default_factory=lambda: os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+        default_factory=lambda: os.getenv("OLLAMA_BASE_URL", DEFAULT_OLLAMA_BASE_URL).rstrip("/")
     )
     ollama_model: str = Field(
-        default_factory=lambda: os.getenv("OLLAMA_MODEL", "qwen3.5:4b")
+        default_factory=lambda: os.getenv("OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL)
     )
     backend_host: str = Field(
         default_factory=lambda: os.getenv("BACKEND_HOST", "127.0.0.1")
@@ -27,7 +32,7 @@ class Settings(BaseModel):
         default_factory=lambda: int(os.getenv("BACKEND_PORT", "8000"))
     )
     request_timeout_seconds: float = Field(
-        default_factory=lambda: float(os.getenv("REQUEST_TIMEOUT_SECONDS", "600.0"))
+        default_factory=lambda: float(os.getenv("REQUEST_TIMEOUT_SECONDS", str(DEFAULT_REQUEST_TIMEOUT)))
     )
     max_diff_size_bytes: int = Field(
         default_factory=lambda: int(os.getenv("MAX_DIFF_SIZE_BYTES", "1048576"))  # 1 MB

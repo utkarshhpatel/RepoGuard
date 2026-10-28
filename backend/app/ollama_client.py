@@ -1,9 +1,25 @@
+import asyncio
 import json
 import re
 from typing import Any, Optional
 import httpx
 from .config import settings, is_local_endpoint
 from .schemas import ConnectionTestResponse
+
+# Limit concurrent inference to 1 on CPU-only machines to protect RAM
+_inference_semaphore = asyncio.Semaphore(1)
+
+
+def is_model_installed(target_model: str, installed_models: list[str]) -> bool:
+    """Checks whether target_model matches any installed model name exactly or by tag."""
+    target = target_model.strip().lower()
+    target_tag = target if ":" in target else f"{target}:latest"
+    for m in installed_models:
+        m_clean = m.strip().lower()
+        m_tag = m_clean if ":" in m_clean else f"{m_clean}:latest"
+        if m_clean == target or m_tag == target_tag:
+            return True
+    return False
 
 SYSTEM_PROMPT = """You are RepoGuard, an expert, security-focused code review engine.
 Your sole job is to analyze unified git diffs for correctness defects, security vulnerabilities, boundary edge cases, resource leaks, and missing error handling.
@@ -110,6 +126,7 @@ class OllamaClient:
                         reachable=False,
                         model_available=False,
                         installed_models=[],
+                        configured_model=self.model,
                         message=f"Ollama returned HTTP status {res.status_code}",
                         is_local=is_local,
                         warning=warning,
@@ -117,16 +134,14 @@ class OllamaClient:
 
                 data = res.json()
                 models = [m.get("name", "") for m in data.get("models", [])]
-                model_match = any(
-                    self.model in m or m.startswith(self.model) or self.model.split(":")[0] in m
-                    for m in models
-                )
+                model_match = is_model_installed(self.model, models)
 
                 if model_match:
                     return ConnectionTestResponse(
                         reachable=True,
                         model_available=True,
                         installed_models=models,
+                        configured_model=self.model,
                         message=f"Connected to Ollama! Model '{self.model}' is ready.",
                         is_local=is_local,
                         warning=warning,
@@ -136,9 +151,10 @@ class OllamaClient:
                         reachable=True,
                         model_available=False,
                         installed_models=models,
+                        configured_model=self.model,
                         message=(
-                            f"Ollama is running, but model '{self.model}' is not installed. "
-                            f"Run 'ollama run {self.model}' to download it."
+                            f"Ollama is running, but configured model '{self.model}' is not installed. "
+                            f"Run 'ollama pull {self.model}' in your terminal to install it."
                         ),
                         is_local=is_local,
                         warning=warning,
@@ -148,6 +164,7 @@ class OllamaClient:
                 reachable=False,
                 model_available=False,
                 installed_models=[],
+                configured_model=self.model,
                 message=(
                     f"Could not connect to Ollama at {self.base_url}. "
                     "Ensure Ollama is installed and running with 'ollama serve'."
@@ -160,6 +177,7 @@ class OllamaClient:
                 reachable=False,
                 model_available=False,
                 installed_models=[],
+                configured_model=self.model,
                 message=f"Connection check failed: {str(e)}",
                 is_local=is_local,
                 warning=warning,
@@ -175,8 +193,9 @@ class OllamaClient:
             )
         if not health.model_available:
             raise RuntimeError(
-                f"Configured model '{self.model}' is not available on Ollama. "
-                f"Install it with `ollama run {self.model}` or configure an available model ({', '.join(health.installed_models) or 'none'})."
+                f"Configured model '{self.model}' is not installed in Ollama. "
+                f"Please run `ollama pull {self.model}` in your terminal. "
+                f"Installed models: {', '.join(health.installed_models) or 'none'}."
             )
 
         user_content = (
@@ -200,43 +219,53 @@ class OllamaClient:
             },
         }
 
-        try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                res = await client.post(f"{self.base_url}/api/chat", json=payload)
-                if res.status_code != 200:
-                    # Fallback to /api/generate if /api/chat is not supported on older versions
-                    generate_payload = {
-                        "model": self.model,
-                        "prompt": f"{SYSTEM_PROMPT}\n\nUser: {user_content}\n\nAssistant:",
-                        "stream": False,
-                        "format": "json",
-                        "options": {"temperature": 0.2},
-                    }
-                    res = await client.post(f"{self.base_url}/api/generate", json=generate_payload)
+        # Serialized inference to prevent RAM exhaustion on 8 GB systems
+        async with _inference_semaphore:
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    res = await client.post(f"{self.base_url}/api/chat", json=payload)
+                    if res.status_code != 200:
+                        # Fallback to /api/generate if /api/chat is not supported
+                        generate_payload = {
+                            "model": self.model,
+                            "prompt": f"{SYSTEM_PROMPT}\n\nUser: {user_content}\n\nAssistant:",
+                            "stream": False,
+                            "format": "json",
+                            "options": {"temperature": 0.2},
+                        }
+                        res = await client.post(f"{self.base_url}/api/generate", json=generate_payload)
 
-                if res.status_code != 200:
-                    raise RuntimeError(f"Ollama API error ({res.status_code}): {res.text}")
+                    if res.status_code == 500 or res.status_code == 507:
+                        err_text = res.text.lower()
+                        if "memory" in err_text or "out of memory" in err_text or "allocate" in err_text:
+                            raise RuntimeError(
+                                f"Ollama ran out of memory while loading '{self.model}'. "
+                                "Close background applications to free RAM or use Demo Mode."
+                            )
+                        raise RuntimeError(f"Ollama inference error ({res.status_code}): {res.text}")
+                    elif res.status_code != 200:
+                        raise RuntimeError(f"Ollama API error ({res.status_code}): {res.text}")
 
-                data = res.json()
-                msg_obj = data.get("message", {})
-                raw_message = msg_obj.get("content", "").strip() if isinstance(msg_obj, dict) else ""
-                
-                # Resilient fallback: If model put response in thinking block or generate response field
-                if not raw_message and isinstance(msg_obj, dict):
-                    raw_message = msg_obj.get("thinking", "").strip()
-                if not raw_message:
-                    raw_message = data.get("response", "").strip()
+                    data = res.json()
+                    msg_obj = data.get("message", {})
+                    raw_message = msg_obj.get("content", "").strip() if isinstance(msg_obj, dict) else ""
+                    
+                    # Resilient fallback: If model put response in thinking block or generate response field
+                    if not raw_message and isinstance(msg_obj, dict):
+                        raw_message = msg_obj.get("thinking", "").strip()
+                    if not raw_message:
+                        raw_message = data.get("response", "").strip()
 
-                if not raw_message:
-                    raise ValueError("Model returned an empty response.")
+                    if not raw_message:
+                        raise ValueError("Model returned an empty response.")
 
-                return extract_and_repair_json(raw_message)
+                    return extract_and_repair_json(raw_message)
 
-        except httpx.TimeoutException:
-            raise TimeoutError(
-                f"Model inference timed out after {self.timeout}s. "
-                "Running 4B+ models on CPU without a GPU can be slow on constrained machines. "
-                "Click 'Demo Review' for an instant deterministic demonstration, or allocate a GPU to Ollama."
-            )
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to decode model JSON: {str(e)}")
+            except httpx.TimeoutException:
+                raise TimeoutError(
+                    f"Model inference timed out after {self.timeout}s on CPU. "
+                    "The diff may be too large or the CPU is busy. "
+                    "Try reviewing a smaller diff or use Demo Mode for instant deterministic results."
+                )
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Failed to decode model JSON: {str(e)}")

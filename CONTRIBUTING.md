@@ -7,7 +7,7 @@ Thank you for your interest in contributing to RepoGuard! We welcome contributio
 ### Prerequisites
 - Node.js >= 18 and npm >= 9
 - Python >= 3.10
-- [Ollama](https://ollama.ai) (optional for Demo Mode, required for live AI reviews) with `qwen3.5:4b`
+- [Ollama](https://ollama.ai) (optional for Demo Mode, required for live AI reviews) with `qwen2.5-coder:1.5b`
 
 ### Backend Setup
 ```bash

@@ -20,9 +20,21 @@ async def test_settings_endpoint():
         response = await ac.get("/api/settings")
     assert response.status_code == 200
     data = response.json()
-    assert "ollama_model" in data
-    assert "ollama_base_url" in data
+    assert data["ollama_model"] == "qwen2.5-coder:1.5b"
+    assert data["ollama_base_url"] == "http://127.0.0.1:11434"
     assert data["is_local"] is True
+
+
+@pytest.mark.asyncio
+async def test_model_health_endpoint():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.get("/api/health/model")
+    assert response.status_code == 200
+    data = response.json()
+    assert "reachable" in data
+    assert "model_available" in data
+    assert data["configured_model"] == "qwen2.5-coder:1.5b"
 
 
 @pytest.mark.asyncio

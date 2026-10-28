@@ -141,6 +141,7 @@ class ConnectionTestResponse(BaseModel):
     reachable: bool
     model_available: bool
     installed_models: list[str] = Field(default_factory=list)
+    configured_model: str = Field(default="qwen2.5-coder:1.5b")
     message: str
     is_local: bool
     warning: Optional[str] = None

@@ -54,6 +54,7 @@ async def health_check():
 
 
 @app.get("/api/model/status", response_model=ConnectionTestResponse)
+@app.get("/api/health/model", response_model=ConnectionTestResponse)
 async def get_model_status():
     """Checks whether Ollama is reachable and whether configured model is available."""
     client = OllamaClient()

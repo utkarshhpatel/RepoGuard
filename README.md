@@ -7,7 +7,7 @@
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![React 18](https://img.shields.io/badge/React-18-61DAFB.svg)](https://react.dev/)
-[![Ollama](https://img.shields.io/badge/AI-Ollama%20(qwen3.5:4b)-orange.svg)](https://ollama.ai/)
+[![Ollama](https://img.shields.io/badge/AI-Ollama%20(qwen2.5--coder%3A1.5b)-orange.svg)](https://ollama.ai/)
 
 ---
 
@@ -22,7 +22,7 @@ Modern AI coding assistants provide powerful code reviews, but sending proprieta
 ## 💡 The Solution: RepoGuard
 
 **RepoGuard** is built from the ground up to solve these problems by running entirely on **localhost**:
-1. **100% On-Device Inference**: Powered by local models running in [Ollama](https://ollama.ai) (defaulting to `qwen3.5:4b`). No proprietary cloud APIs, no subscriptions, and zero external telemetry.
+1. **100% On-Device Inference**: Powered by local models running in [Ollama](https://ollama.ai) (defaulting to lightweight, CPU-friendly `qwen2.5-coder:1.5b`). No proprietary cloud APIs, no subscriptions, and zero external telemetry.
 2. **Hybrid Intelligence**: Merges instant deterministic checks (literal zero-division, dangerous `eval`, hardcoded keys, empty exception blocks) with local language model reasoning.
 3. **Diff Cross-Validation**: Every model finding is validated against the actual parsed diff line ranges. Hallucinated file paths or out-of-scope line references are flagged as unverified rather than masqueraded as verified code locations.
 4. **Actionable Fixes & Tests**: Provides concrete suggested fixes and regression test cases ready for maintainer inspection and 1-click clipboard copying.
@@ -61,7 +61,7 @@ Modern AI coding assistants provide powerful code reviews, but sending proprieta
                               ▼
 ┌────────────────────────────────────────────────────────┐
 │                   Ollama Server                        │
-│         Running `qwen3.5:4b` Locally                   │
+│         Running `qwen2.5-coder:1.5b` Locally           │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -130,15 +130,15 @@ To run reviews using local AI inference:
    ollama serve
    ```
 
-2. **Pull the Default Model (`qwen3.5:4b`)**:
+2. **Pull the Default Model (`qwen2.5-coder:1.5b`)**:
    ```bash
-   ollama pull qwen3.5:4b
+   ollama pull qwen2.5-coder:1.5b
    ```
 
 3. **Verify the Connection**:
    In the RepoGuard UI, open **Settings** and click **Test Connection**, or run:
    ```bash
-   curl http://127.0.0.1:8000/api/model/status
+   curl http://127.0.0.1:8000/api/health/model
    ```
    If Ollama is offline or the model is downloading, RepoGuard will automatically offer **Deterministic Demo Mode**.
 
@@ -204,7 +204,7 @@ RepoGuard includes a suite of lightweight deterministic rules:
 
 ## ⚠️ Known Limitations & Disclaimers
 
-1. **Hardware Considerations**: Running a 4B parameter model (`qwen3.5:4b`) on CPU requires 4–8 GB of RAM and may take 30–90 seconds per review. GPU acceleration (CUDA, Metal, ROCm) significantly accelerates inference.
+1. **Hardware Considerations**: Default model `qwen2.5-coder:1.5b` requires only ~1 GB RAM footprint (986 MB download) and runs smoothly on modest laptop CPUs (such as an Intel Core i3 10th Gen with 8 GB RAM) in ~30–50 seconds without running out of memory. GPU acceleration further accelerates inference.
 2. **Advisory Suggestions**: All suggested fixes and regression test snippets are generated for human review. They are not automatically executed or guaranteed to compile.
 3. **Diff Scope**: RepoGuard reviews changed lines within submitted hunks. Cross-file architectural refactors without unified diff context are outside the scope of individual diff reviews.
 
