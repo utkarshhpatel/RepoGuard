@@ -27,7 +27,7 @@ class Settings(BaseModel):
         default_factory=lambda: int(os.getenv("BACKEND_PORT", "8000"))
     )
     request_timeout_seconds: float = Field(
-        default_factory=lambda: float(os.getenv("REQUEST_TIMEOUT_SECONDS", "300.0"))
+        default_factory=lambda: float(os.getenv("REQUEST_TIMEOUT_SECONDS", "600.0"))
     )
     max_diff_size_bytes: int = Field(
         default_factory=lambda: int(os.getenv("MAX_DIFF_SIZE_BYTES", "1048576"))  # 1 MB

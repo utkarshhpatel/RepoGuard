@@ -197,7 +197,6 @@ class OllamaClient:
             "format": "json",
             "options": {
                 "temperature": 0.2,
-                "num_predict": 500,
             },
         }
 
@@ -211,7 +210,7 @@ class OllamaClient:
                         "prompt": f"{SYSTEM_PROMPT}\n\nUser: {user_content}\n\nAssistant:",
                         "stream": False,
                         "format": "json",
-                        "options": {"temperature": 0.2, "num_predict": 512},
+                        "options": {"temperature": 0.2},
                     }
                     res = await client.post(f"{self.base_url}/api/generate", json=generate_payload)
 
